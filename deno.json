@@ -24,7 +24,7 @@
     "publish": "deno task prepublish && deno publish"
   },
   "workspace": [
-    "./packages/weak-map"
+    "./packages/weak_map"
   ],
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
