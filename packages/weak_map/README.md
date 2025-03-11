@@ -13,10 +13,10 @@
 ---
 
 This package provides the [`IterableWeakMap`] class, which serves as an
-**_iterable_** drop-in replacement for the standard [`WeakMap`] class. With a
-familiar public API that implements the standard [`Map`] interface, allowing you
-to observe its entries without sacrificing the memory-safe aspects of its native
-counterpart.
+**_iterable_** drop-in replacement for the standard [`WeakMap`] class. With an
+API that implements both the standard [`Map`] interface **and** the standard
+<sup><em>(non-iterable)</em></sup> [`WeakMap`], it provides a familiar surface
+for working with weakly-held keys and values.
 
 ## Install
 
