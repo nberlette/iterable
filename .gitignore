@@ -5,6 +5,7 @@ node_modules
 .*.log
 *.env*
 *.lock*
+!deno.lock
 *-lock.*
 target
 dist
