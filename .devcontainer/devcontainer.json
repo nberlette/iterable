@@ -1,0 +1,61 @@
+{
+  "name": "@iter",
+  "dockerFile": "Dockerfile",
+  "remoteUser": "vscode",
+  // container features to add during the build step
+  "features": {
+    "git": "latest",
+    "sshd": "latest",
+    "node": "latest",
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/meaningful-ooo/devcontainer-features/homebrew:2": {},
+    "ghcr.io/devcontainers-contrib/features/act:1": {},
+    "ghcr.io/devcontainers-contrib/features/actionlint:1": {}
+  },
+  "build": {},
+  "updateRemoteUserUID": true,
+  // settings for the vscode editor
+  "customizations": {
+    "codespaces": {
+      "openFiles": [
+        "README.md",
+        "deno.json"
+      ]
+    },
+    "vscode": {
+      "settings": {
+        "deno.enable": true,
+        "deno.lint": true,
+        "deno.codeLens.test": true,
+        "deno.cacheOnSave": true,
+        "editor.tabSize": 2,
+        "editor.stickyTabStops": true,
+        "editor.linkedEditing": true,
+        "editor.minimap.enabled": false,
+        "editor.defaultFormatter": "denoland.vscode-deno",
+        "editor.formatOnPaste": false,
+        "editor.formatOnSave": true,
+        "[github-actions-workflow]": {
+          "editor.defaultFormatter": "denoland.vscode-deno"
+          // "editor.defaultFormatter": "github.vscode-github-actions"
+        },
+        "deno.unstable": [
+          "fmt-yaml"
+        ],
+        "deno.defaultTaskCommand": "open"
+      },
+      "extensions": [
+        "github.theme",
+        "github.vscode-github-actions",
+        "github.copilot",
+        "denoland.vscode-deno",
+        "editorconfig.editorconfig",
+        "vsls-contrib.gistfs",
+        "redhat.vscode-yaml",
+        "bierner.markdown-preview-github-styles",
+        "mutantdino.resourcemonitor"
+      ]
+    }
+  },
+  "updateContentCommand": "sudo deno upgrade --canary --force 2>&1"
+}
