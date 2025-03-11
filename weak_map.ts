@@ -11,4 +11,11 @@
  */
 export * from "./packages/weak_map/mod.ts";
 
+/**
+ * The `IterableWeakMap` class can be used as a drop-in replacement for
+ * either the standard `Map` or `WeakMap`, for an iterable collection
+ * that operates using exclusively weak references to its keys.
+ *
+ * @see https://jsr.io/@iter/weak-map/doc for more information.
+ */
 export { default } from "./packages/weak_map/mod.ts";
