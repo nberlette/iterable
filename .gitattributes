@@ -1,0 +1,44 @@
+# .gitattributes
+* text eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.wasm binary
+*.zip binary
+*.tar.gz binary
+*.tar.bz2 binary
+*.tar.xz binary
+*.tgz binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.otf binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.doc binary
+*.xls binary
+*.ppt binary
+*.svg text eol=lf
+
+# exclude these file patterns from the language stats
+*.map linguist-vendored
+*.min.* linguist-vendored
+*.wasm linguist-vendored
+*_bg.* linguist-vendored
+
+# exclude these folder patterns from the language stats
+**/build/* linguist-vendored
+**/dist/* linguist-vendored
+**/docs/* linguist-vendored
+**/fixtures/* linguist-vendored
+**/lib/* linguist-vendored
+**/node_modules/* linguist-vendored
+**/out/* linguist-vendored
+**/templates/* linguist-vendored
+**/testdata/* linguist-vendored
+**/vendor/* linguist-vendored
