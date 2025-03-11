@@ -124,3 +124,4 @@ const likeThis = [...weakMap.keys()].pop();
 [badge-jsr]: https://jsr.io/badges/@iter?labelColor=123&color=123&logoColor=f7df1e "View all @iter/* packages on jsr.io"
 [badge-npm]: https://img.shields.io/badge/@itter-tomato.svg?logoWidth=32&logoColor=white&color=firebrick&logo=data:image/svg+xml;charset=utf-8;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzLjExZW0iIGhlaWdodD0iMWVtIiB2aWV3Qm94PSIwIC0yNSA1MTIgMTkwIj48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTU3LjUzOCAxNjQuMTAzaDY1LjY0MXYtMzIuODJoNjUuNjQyVjBIMTU3LjUzOHpNMjIzLjE4IDMyLjgySDI1NnY2NS42NGgtMzIuODJ6TTMxNS4wNzcgMHYxMzEuMjgyaDY1LjY0VjMyLjgyMWgzMi44MjF2OTguNDYxaDMyLjgyMVYzMi44MjFoMzIuODJ2OTguNDYxSDUxMlYwek0wIDEzMS4yODJoNjUuNjQxVjMyLjgyMWgzMi44MnY5OC40NjFoMzIuODIxVjBIMHoiLz48L3N2Zz4= "View all @itter packages on NPM"
 [badge-mit]: https://img.shields.io/badge/-MIT-blue.svg?logo=github "MIT License"
+[jsr-weak-map]: https://jsr.io/@iter/weak-map/doc "View the @iter/weak-map package on jsr.io"
