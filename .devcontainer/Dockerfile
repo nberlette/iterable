@@ -21,7 +21,7 @@ ENV STARSHIP_PRESET="gruvbox-rainbow" HOME=/home/${USER:-vscode}
 # add some extensions to the bottom of the .bashrc file, to ensure homebrew is
 # configured correctly, install the starship CLI (if needed), and configure its
 # preset configuration if none is defined yet. also adds a couple aliases.
-RUN echo '[[ ":$PATH:" == *":$HOMEBREW_PREFIX:"* ]] || export PATH="$HOMEBREW_PREFIX/bin:$PATH"; eval "$(brew shellenv)";' >> ${HOME}/.bashrc \
+RUN echo '[[ ":$PATH:" == *":$HOMEBREW_PREFIX/bin:"* ]] || export PATH="$HOMEBREW_PREFIX/bin:$PATH"; eval "$(brew shellenv)";' >> ${HOME}/.bashrc \
   && echo 'command -v starship &>/dev/null || brew install starship &>/dev/null; eval "$(starship init bash)";' >> ${HOME}/.bashrc \
   && echo '[ -f "$HOME/.config/starship.toml" ] || starship preset '${STARSHIP_PRESET:-"gruvbox-rainbow"}' -o ~/.config/starship.toml' >> ${HOME}/.bashrc \
   && echo 'alias ll="ls -AlhFo --color=auto --si --group-directories-first --time-style=long-iso --file-type";\\n'\
