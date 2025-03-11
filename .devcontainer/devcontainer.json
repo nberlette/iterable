@@ -40,7 +40,6 @@
           // "editor.defaultFormatter": "github.vscode-github-actions"
         },
         "deno.unstable": [
-          "fmt-yaml"
         ],
         "deno.defaultTaskCommand": "open"
       },
