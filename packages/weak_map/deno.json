@@ -1,0 +1,15 @@
+{
+  "name": "@iter/weak-map",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": {
+    "name": "Nicholas Berlette",
+    "email": "nick@berlette.com",
+    "url": "https://github.com/nberlette"
+  },
+  "exports": "./mod.ts",
+  "tasks": {
+    "test": "deno test -A --parallel --no-check=remote --permit-no-files --clean --coverage=.coverage --v8-flags=--expose-gc",
+    "test:doc": "deno task test --doc"
+  }
+}
