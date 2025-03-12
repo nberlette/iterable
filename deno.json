@@ -9,7 +9,7 @@
     "test:base": "deno test -A --parallel --permit-no-files --clean --coverage",
     "test": "deno task test:base --no-check=remote ./packages/*",
     "test:doc": "deno task test:base --doc --no-check=remote ./packages/*",
-    "test:nocheck": "deno task:base test --no-check ./packages/*",
+    "test:nocheck": "deno task test:base --no-check ./packages/*",
     "fmt:check": "deno fmt --check ./packages/**/*",
     "fmt:write": "deno fmt ./packages/**/*",
     "lint": "deno lint ./packages/**/*",
