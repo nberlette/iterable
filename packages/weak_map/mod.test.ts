@@ -82,6 +82,20 @@ describe("IterableWeakMap.groupBy: static method", () => {
       "empty key should be undefined",
     ).toBeUndefined();
   });
+
+  it("should throw if the first argument is not iterable", () => {
+    expect(() => {
+      // @ts-expect-error this is intentional
+      IterableWeakMap.groupBy(123, () => {});
+    }).toThrow(TypeError);
+  });
+
+  it("should throw if the keySelector argument is not callable", () => {
+    expect(() => {
+      // @ts-expect-error this is intentional
+      IterableWeakMap.groupBy([], 123);
+    }).toThrow(TypeError);
+  });
 });
 
 describe("IterableWeakMap: prototype structural conformity", () => {
@@ -230,4 +244,91 @@ describe("IterableWeakMap: behavior and functionality", () => {
       "The map should iterate over at least 1 and at most 2 entries after GC.",
     ).toBe(true);
   });
+
+  it("should support forEach", () => {
+    const map = new IterableWeakMap<WeakKey, string>();
+    const key1 = {}, key2 = {};
+    const values: string[] = [];
+
+    map.set(key1, "value1").set(key2, "value2");
+
+    map.forEach((value) => {
+      values.push(value);
+    });
+
+    expect(values.length, "Should iterate over 2 values.").toBe(2);
+    expect(values.includes("value1"), "Should include value1.").toBe(true);
+    expect(values.includes("value2"), "Should include value2.").toBe(true);
+  });
+
+  it("should throw if forEach is called without a callback", () => {
+    const map = new IterableWeakMap<WeakKey, string>();
+    const key1 = {}, key2 = {};
+
+    map.set(key1, "value1").set(key2, "value2");
+
+    expect(() => {
+      // @ts-expect-error this is intentional
+      map.forEach();
+    }, "Should throw if no callback is provided.").toThrow(TypeError);
+
+    expect(() => {
+      // @ts-expect-error this is intentional
+      map.forEach("not a function");
+    }, "Should throw if a non-function is provided.").toThrow(TypeError);
+
+    expect(() => {
+      map.forEach(() => {});
+    }, "Should not throw if a valid callback is provided.").not.toThrow();
+  });
 });
+
+const GeneratorFunctionConstructor: GeneratorFunctionConstructor =
+  Object.getPrototypeOf(function* () {}).constructor;
+const GeneratorFunction = GeneratorFunctionConstructor.prototype;
+const Generator = GeneratorFunction.prototype;
+
+const testIteration = <K extends keyof IterableWeakMap>(key: K) => {
+  const ks = typeof key === "symbol" ? `[${key.toString()}]` : key.toString();
+  describe(
+    `IterableWeakMap.prototype${ks.startsWith("[") ? ks : `.${ks}`}()`,
+    () => {
+      const fn =
+        IterableWeakMap.prototype[key as "keys" | "values" | "entries"];
+
+      it("should be a function", () => expect(typeof fn).toBe("function"));
+
+      it(`should be named '${ks}'`, () => expect(fn.name).toBe(key));
+
+      it("should have an arity of 0", () => expect(fn).toHaveLength(0));
+
+      it("should be a generator function", () => {
+        expect(fn).toBeInstanceOf(GeneratorFunctionConstructor);
+      });
+
+      it("should return a generator", () => {
+        const map = new IterableWeakMap<WeakKey, string>();
+        const iterator = fn.call(map);
+        expect(
+          Object.prototype.isPrototypeOf.call(Generator, iterator),
+          "Should have the generator prototype.",
+        ).toBe(true);
+        expect(iterator.constructor, "Should have the generator constructor.")
+          .toBe(GeneratorFunction);
+      });
+
+      it("should support iteration", () => {
+        const map = new IterableWeakMap<WeakKey, string>();
+        const key1 = {}, key2 = {};
+        map.set(key1, "value1").set(key2, "value2");
+        const iterator = fn.call(map);
+        const values = [...iterator];
+        expect(values.length, "Should iterate over 2 values.").toBe(2);
+      });
+    },
+  );
+};
+
+testIteration("keys");
+testIteration("values");
+testIteration("entries");

@@ -57,8 +57,8 @@
  * @internal
  */
 type WeakPayload<K extends WeakKey = WeakKey, V = any> = {
-  k: WeakRef<K>;
-  v: V;
+  ref: WeakRef<K>;
+  value: V;
 };
 
 /**
@@ -172,6 +172,16 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
     items: Iterable<T>,
     keySelector: (value: T, index: number) => K,
   ): IterableWeakMap<K, T[]> {
+    if (typeof keySelector !== "function") {
+      throw new TypeError(
+        "[IterableWeakMap.groupBy] Expected a function: 'keySelector'",
+      );
+    }
+    if (items == null || typeof items[Symbol.iterator] !== "function") {
+      throw new TypeError(
+        "[IterableWeakMap.groupBy] Expected an iterable: 'items'",
+      );
+    }
     const map = new IterableWeakMap<K, T[]>();
     let index = 0;
     for (const value of items) {
@@ -276,12 +286,11 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    */
   clear(): void {
     for (const ref of this.#set) {
-      const key = ref.deref();
-      if (key) {
-        this.#reg.unregister(key);
-        this.#map.delete(key);
-        this.#set.delete(ref);
+      if (ref.deref()!) {
+        this.#reg.unregister(ref.deref()!);
+        this.#map.delete(ref.deref()!);
       }
+      this.#set.delete(ref);
     }
     this.#set.clear();
   }
@@ -305,14 +314,11 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * ```
    */
   delete(key: K): boolean {
-    const { k } = this.#map.get(key) ?? {};
-    if (k?.deref() === key) {
-      this.#reg.unregister(key);
-      this.#map.delete(key);
-      this.#set.delete(k);
-      return true;
-    }
-    return false;
+    const { ref } = this.#map.get(key) ?? {};
+    return ref?.deref() === key &&
+      this.#reg.unregister(key) &&
+      this.#map.delete(key) &&
+      this.#set.delete(ref);
   }
 
   /**
@@ -341,9 +347,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * ```
    */
   get(key: K): V | undefined {
-    const { k, v } = this.#map.get(key) ?? {};
-    if (k?.deref() === key) return v;
-    return undefined;
+    const { ref, value } = this.#map.get(key) ?? {};
+    if (ref?.deref() === key) return value;
   }
 
   /**
@@ -364,9 +369,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * ```
    */
   has(key: K): boolean {
-    const { k } = this.#map.get(key) ?? {};
-    if (k?.deref() === key) return true;
-    return false;
+    const { ref } = this.#map.get(key) ?? {};
+    return ref?.deref() === key;
   }
 
   /**
@@ -384,15 +388,15 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * ```
    */
   set(key: K, value: V): this {
-    let { k } = this.#map.get(key) ?? {};
-    if (k?.deref() === key) {
-      this.#map.set(key, { k, v: value });
-      return this;
+    const entry = this.#map.get(key);
+    if (entry?.ref?.deref() !== key) {
+      const ref = new WeakRef(key);
+      const set = this.#set.add(ref);
+      const map = this.#map.set(key, { ref, value });
+      this.#reg.register(key, { ref, map, set }, key);
+    } else {
+      entry.value = value;
     }
-    k = new WeakRef(key);
-    this.#reg.register(key, { ref: k, map: this.#map, set: this.#set }, key);
-    this.#map.set(key, { k, v: value });
-    this.#set.add(k);
     return this;
   }
 
@@ -519,7 +523,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
   *entries(): MapIterator<[K, V]> {
     for (const ref of this.#set) {
       const r = this.#map.get(ref.deref()!);
-      if (r) yield [ref.deref()!, r.v];
+      if (r) yield [ref.deref()!, r.value];
     }
   }
 
