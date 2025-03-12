@@ -3,7 +3,6 @@
 import { IterableWeakMap } from "./mod.ts";
 import { describe, it } from "@std/testing/bdd";
 import { expect } from "@std/expect";
-import { assert } from "@std/assert";
 
 declare function gc(): void;
 
@@ -222,13 +221,13 @@ describe("IterableWeakMap: behavior and functionality", () => {
 
     let count = 0;
     for (const [key, _value] of map) {
-      assert(key != null, "Iterated key should not be null.");
+      expect(key, "Iterated key should not be undefined.").not.toBeUndefined();
       count++;
     }
 
-    assert(
+    expect(
       count <= 2 && count >= 1,
       "The map should iterate over at least 1 and at most 2 entries after GC.",
-    );
+    ).toBe(true);
   });
 });
