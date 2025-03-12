@@ -168,7 +168,7 @@ jobs:
       - id: lint
         if: ${{ github.event.inputs.lint != 'false' }}
         run: |
-          if [[ "${{ github.event.inputs.lint }}" == "true" ]]; then
+          if [[ "${{ github.event.inputs.lint || 'true' }}" == "true" ]]; then
             deno lint
           elif [[ "${{ github.event.inputs.lint }}" == "${ALL_OF_THE_ABOVE}" ]]; then
             deno lint --fix
@@ -191,7 +191,7 @@ jobs:
       - id: test
         if: ${{ github.event.inputs.test != 'false' }}
         run: |
-          if [[ "${{ github.event.inputs.test }}" == "deno test --doc" ]]; then
+          if [[ "${{ github.event.inputs.test || 'deno test --doc' }}" == "deno test --doc" ]]; then
             deno task test:doc
           elif [[ "${{ github.event.inputs.test }}" == "deno test --no-check" ]]; then
             deno task test:nocheck
@@ -206,7 +206,7 @@ jobs:
           steps.test.outcome != 'skipped' &&
           steps.test.outcome != 'cancelled'
         run: |
-          if [[ "${{ github.event.inputs.coverage }}" == "deno coverage" ]] || [[ "${{ github.event.inputs.coverage }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+          if [[ "${{ github.event.inputs.coverage || 'deno coverage' }}" == "deno coverage" ]] || [[ "${{ github.event.inputs.coverage }}" == "${ALL_OF_THE_ABOVE}" ]]; then
             deno coverage --detailed "${DENO_COV_DIR}"
           fi
           if [[ "${{ github.event.inputs.coverage }}" == "deno coverage --lcov" ]] || [[ "${{ github.event.inputs.coverage }}" == "${ALL_OF_THE_ABOVE}" ]]; then
@@ -232,6 +232,10 @@ jobs:
       - id: docs
         if: ${{ github.event.inputs.docs != 'false' }}
         run: |
+          if [[ "${{ github.event.inputs.docs }}" == "" ]] || [[ "${{ github.event.inputs.docs }}" == "deno doc" ]]; then
+            deno doc > "${DENO_DOC_DIR}/docs.txt"
+            deno doc
+          fi
           if [[ "${{ github.event.inputs.docs }}" == "true" ]] || [[ "${{ github.event.inputs.docs }}" == "${ALL_OF_THE_ABOVE}" ]]; then
             deno doc --html --output="${DENO_DOC_DIR}"
           fi
@@ -240,10 +244,6 @@ jobs:
           fi
           if [[ "${{ github.event.inputs.docs }}" == "deno doc --lint" ]] || [[ "${{ github.event.inputs.docs }}" == "${ALL_OF_THE_ABOVE}" ]]; then
             deno doc --lint > "${DENO_DOC_DIR}/lint.txt"
-          fi
-          if [[ "${{ github.event.inputs.docs }}" == "deno doc" ]]; then
-            deno doc > "${DENO_DOC_DIR}/docs.txt"
-            deno doc
           fi
 
       - id: artifacts
