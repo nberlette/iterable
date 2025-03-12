@@ -131,7 +131,7 @@ jobs:
     env:
       ALL_OF_THE_ABOVE: "all of the above"
       TESTDATA_DIR: ${{ github.workspace }}/testdata
-      DENO_COV_DIR: ${{ github.workspace }}/.coverage
+      DENO_COV_DIR: ${{ github.workspace }}/coverage
       DENO_DOC_DIR: ${{ github.workspace }}/docs
       HTML_COV_DIR: ${{ github.workspace }}/coverage/html
       LCOV_COV_DIR: ${{ github.workspace }}/coverage/lcov
