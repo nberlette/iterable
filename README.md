@@ -100,19 +100,19 @@ const likeThis = [...weakMap.keys()].pop();
 
 ---
 
-<div align="center"><p>
+<div align="center">
 
 **[MIT] © [Nicholas Berlette]. All rights reserved.**
 
-</p><p><b><small>
+<small>
 
-[GitHub] · [Issues] · [JSR] · [NPM] · [Deno]
+**[GitHub] · [Issues] · [JSR] · [NPM] · [Deno]**
 
-</small></b></p><p>
+</small>
 
 [![][badge-jsr]][jsr]
 
-</p></div>
+</div>
 
 [MIT]: https://nick.mit-license.org "Copyright © 2023-2024 Nicholas Berlette. MIT License."
 [Nicholas Berlette]: https://github.com/nberlette "Nicholas Berlette's GitHub Profile"
