@@ -6,6 +6,20 @@ import { expect } from "@std/expect";
 
 declare function gc(): void;
 
+if (typeof gc !== "function") {
+  // force the test run to have a GC function if we forgot to pass the flag
+  const p = new Deno.Command(Deno.execPath(), {
+    args: ["test", "--v8-flags=--expose-gc", ...Deno.args],
+    stdout: "inherit",
+    stderr: "inherit",
+    stdin: "inherit",
+  }).spawn();
+  p.ref();
+  const { code } = await p.status;
+  p.unref();
+  Deno.exit(code);
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe("IterableWeakMap: constructor and static methods", () => {
