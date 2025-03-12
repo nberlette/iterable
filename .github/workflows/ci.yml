@@ -1,0 +1,323 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - main
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to Release ("auto" to auto-detect)'
+        required: false
+        type: string
+        default: "auto"
+      deno-version:
+        description: "Deno version to use"
+        required: false
+        default: "canary"
+      os:
+        description: "Operating system to use"
+        required: true
+        type: choice
+        options:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+        default: "ubuntu-latest"
+      lint:
+        description: "Run deno lint?"
+        required: false
+        type: choice
+        options:
+          - true
+          - "deno lint --fix"
+          - "deno doc --lint"
+          - "all of the above"
+          - false
+        default: "all of the above"
+      test:
+        description: "Run deno test?"
+        required: false
+        type: choice
+        options:
+          - true
+          - "deno test --doc"
+          - "deno test --no-check"
+          - "deno test --coverage"
+          - "all of the above"
+          - false
+        default: "deno test --doc"
+      fmt:
+        description: "Run deno fmt?"
+        required: false
+        type: choice
+        options:
+          - true
+          - "deno fmt"
+          - "deno fmt --check"
+          - "all of the above"
+          - false
+        default: "deno fmt --check"
+      coverage:
+        description: "Run deno coverage?"
+        required: false
+        type: choice
+        options:
+          - true
+          - "deno coverage"
+          - "deno coverage --lcov"
+          - "deno coverage --html"
+          - "all of the above"
+          - false
+        default: "deno coverage"
+      docs:
+        description: "Generate documentation?"
+        required: false
+        type: choice
+        options:
+          - true
+          - "deno doc"
+          - "deno doc --html"
+          - "deno doc --json"
+          - "all of the above"
+          - false
+        default: "deno doc"
+      build:
+        description: "Run build? (if present)"
+        required: false
+        type: boolean
+        default: false
+      publish:
+        description: "Publish the release?"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  setup:
+    runs-on: ${{ github.event.inputs.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Deno
+        uses: denoland/setup-deno@main
+        with:
+          deno-version: ${{ github.event.inputs['deno-version'] }}
+
+      - id: cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.deno
+            ~/.cache
+            ./**/*
+          key: ${{ runner.os }}-deno-${{ github.event.inputs['deno-version'] }}-${{ hashFiles('**/*') }}
+          enableCrossOsArchive: true
+
+  check:
+    runs-on: ${{ github.event.inputs.os }}
+    needs: setup
+    env:
+      ALL_OF_THE_ABOVE: "all of the above"
+      TESTDATA_DIR: ${{ github.workspace }}/testdata
+      DENO_COV_DIR: ${{ github.workspace }}/.coverage
+      DENO_DOC_DIR: ${{ github.workspace }}/docs
+      HTML_COV_DIR: ${{ github.workspace }}/coverage/html
+      LCOV_COV_DIR: ${{ github.workspace }}/coverage/lcov
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - id: setup-deno
+        name: Setup Deno
+        uses: denoland/setup-deno@main
+        with:
+          deno-version: ${{ github.event.inputs.deno-version }}
+
+      - id: cache
+        name: restore cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.deno
+            ~/.cache
+            ./**/*
+          key: ${{ runner.os }}-deno-${{ github.event.inputs.deno-version }}-${{ hashFiles('**/*') }}
+          restore-keys: |
+            ${{ runner.os }}-deno-${{ github.event.inputs.deno-version }}-
+            ${{ runner.os }}-deno-
+            ${{ runner.os }}-
+
+      - id: lint
+        name: Run deno lint
+        if: ${{ github.event.inputs.lint != 'false' }}
+        run: |
+          if [[ "${{ github.event.inputs.lint }}" == "true" ]]; then
+            deno lint
+          elif [[ "${{ github.event.inputs.lint }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno lint --fix
+            deno doc --lint
+          else
+            eval "${{ github.event.inputs.lint }}"
+            # "but it's a workflow dispatch input so who cares"
+            #  - GitHub Copilot
+          fi
+
+      - id: fmt
+        name: Run deno fmt
+        if: ${{ github.event.inputs.fmt != 'false' }}
+        run: |
+          if [[ "${{ github.event.inputs.fmt }}" == "true" ]] || [[ "${{ github.event.inputs.fmt }}" == "deno fmt" ]]; then
+            deno fmt
+          else
+            deno fmt --check
+          fi
+
+      - id: test
+        name: Run deno test
+        if: ${{ github.event.inputs.test != 'false' }}
+        run: |
+          if [[ "${{ github.event.inputs.test }}" == "deno test --doc" ]]; then
+            deno task test:doc
+          elif [[ "${{ github.event.inputs.test }}" == "deno test --no-check" ]]; then
+            deno task test:nocheck
+          else
+            deno task test
+          fi
+
+      - id: coverage
+        name: Run deno coverage
+        if: |
+          github.event.inputs.coverage != 'false' &&
+          github.event.inputs.test != 'false' &&
+          steps.test.outcome != 'skipped' &&
+          steps.test.outcome != 'cancelled'
+        run: |
+          if [[ "${{ github.event.inputs.coverage }}" == "deno coverage" ]] || [[ "${{ github.event.inputs.coverage }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno coverage --detailed "${DENO_COV_DIR}"
+          fi
+          if [[ "${{ github.event.inputs.coverage }}" == "deno coverage --lcov" ]] || [[ "${{ github.event.inputs.coverage }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno coverage --lcov --output="$DENO_COV_DIR/lcov.info" "${DENO_COV_DIR}"
+          fi
+          if [[ "${{ github.event.inputs.coverage }}" == "deno coverage --html" ]] || [[ "${{ github.event.inputs.coverage }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno coverage --html "${DENO_COV_DIR}"
+          fi
+
+      - id: build
+        name: Run build task (if present)
+        if: ${{ github.event.inputs.build }}
+        run: |
+          if [ -f "deno.json" ] && jq -e '.tasks.build' deno.json > /dev/null 2>&1; then
+            deno task build
+          elif [ -f "deno.jsonc" ] && jq -e '.tasks.build' deno.jsonc > /dev/null 2>&1; then
+            deno task build
+          else
+            echo $'\e[1;31merror\e[0m no build task found in deno config' >&2
+            exit 1
+          fi
+
+      - id: docs
+        name: Generate documentation
+        if: ${{ github.event.inputs.docs != 'false' }}
+        run: |
+          if [[ "${{ github.event.inputs.docs }}" == "true" ]] || [[ "${{ github.event.inputs.docs }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno doc --html --output="${DENO_DOC_DIR}"
+          fi
+          if [[ "${{ github.event.inputs.docs }}" == "deno doc --json" ]] || [[ "${{ github.event.inputs.docs }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno doc --json > "${DENO_DOC_DIR}/docs.json"
+          fi
+          if [[ "${{ github.event.inputs.docs }}" == "deno doc --lint" ]] || [[ "${{ github.event.inputs.docs }}" == "${ALL_OF_THE_ABOVE}" ]]; then
+            deno doc --lint > "${DENO_DOC_DIR}/lint.txt"
+          fi
+          if [[ "${{ github.event.inputs.docs }}" == "deno doc" ]]; then
+            deno doc > "${DENO_DOC_DIR}/docs.txt"
+            deno doc
+          fi
+
+      - id: artifacts
+        name: Upload artifacts
+        if: |
+          github.event.inputs.docs != 'false' ||
+          github.event.inputs.coverage != 'false' ||
+          github.event.inputs.test != 'false' ||
+          github.event.inputs.lint != 'false' ||
+          github.event.inputs.fmt != 'false'
+        uses: actions/upload-artifact@v4
+        with:
+          name: iterable-${{ github.event.inputs.version }}-${{ github.sha }}
+          path: |
+            ./.coverage
+            ./coverage
+            ./docs
+            ./testdata
+            ./deno.*
+            ./*.md
+            ./*.txt
+            ./*.ts
+            ./packages/**/*
+
+  bump:
+    runs-on: ubuntu-latest
+    needs: check
+    if: |
+      github.event_name == 'workflow_dispatch' && github.event.inputs.publish
+    timeout-minutes: 15
+    concurrency:
+      group: bump
+      cancel-in-progress: true
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@main
+        with:
+          deno-version: ${{ github.event.inputs.deno-version }}
+      - id: bump
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
+          VERSION: ${{ github.event.inputs.version }}
+          GIT_USER_NAME: ${{ github.actor }}
+          GIT_USER_EMAIL: ${{ github.actor }}@users.noreply.github.com
+        run: |
+          git fetch --unshallow origin
+          git config --global user.name "${GIT_USER_NAME}"
+          git config --global user.email "${GIT_USER_EMAIL}"
+
+          deno run -Aq jsr:@deno/bump-workspaces@0.1.22/cli
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: check
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+      (github.event_name == 'release' && github.event.action == 'published')
+    timeout-minutes: 10
+    concurrency:
+      group: publish
+      cancel-in-progress: true
+    continue-on-error: true
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@main
+        with:
+          deno-version: ${{ github.event.inputs.deno-version }}
+      - id: publish
+        run: deno task publish
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF: ${{ github.ref }}
+          GITHUB_SHA: ${{ github.sha }}
