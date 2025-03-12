@@ -232,6 +232,7 @@ jobs:
       - id: docs
         if: ${{ github.event.inputs.docs != 'false' }}
         run: |
+          mkdir -p "${DENO_DOC_DIR}"
           if [[ "${{ github.event.inputs.docs }}" == "" ]] || [[ "${{ github.event.inputs.docs }}" == "deno doc" ]]; then
             deno doc > "${DENO_DOC_DIR}/docs.txt"
             deno doc
