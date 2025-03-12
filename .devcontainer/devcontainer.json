@@ -39,8 +39,7 @@
           "editor.defaultFormatter": "denoland.vscode-deno"
           // "editor.defaultFormatter": "github.vscode-github-actions"
         },
-        "deno.unstable": [
-        ],
+        "deno.unstable": [],
         "deno.defaultTaskCommand": "open"
       },
       "extensions": [
