@@ -101,7 +101,7 @@ on:
 
 jobs:
   setup:
-    runs-on: ${{ github.event.inputs.os }}
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -109,7 +109,7 @@ jobs:
       - name: Setup Deno
         uses: denoland/setup-deno@main
         with:
-          deno-version: ${{ github.event.inputs['deno-version'] }}
+          deno-version: ${{ github.event.inputs.deno-version }}
 
       - id: cache
         uses: actions/cache/save@v4
@@ -118,12 +118,16 @@ jobs:
             ~/.deno
             ~/.cache
             ./**/*
-          key: ${{ runner.os }}-deno-${{ github.event.inputs['deno-version'] }}-${{ hashFiles('**/*') }}
+          key: ${{ runner.os }}-deno-${{ github.event.inputs.deno-version }}-${{ hashFiles('**/*') }}
           enableCrossOsArchive: true
 
   check:
-    runs-on: ${{ github.event.inputs.os }}
     needs: setup
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        deno: ["${{ github.event.inputs.deno-version || 'canary' }}"]
+        os: [ubuntu-latest]
     env:
       ALL_OF_THE_ABOVE: "all of the above"
       TESTDATA_DIR: ${{ github.workspace }}/testdata
@@ -131,32 +135,37 @@ jobs:
       DENO_DOC_DIR: ${{ github.workspace }}/docs
       HTML_COV_DIR: ${{ github.workspace }}/coverage/html
       LCOV_COV_DIR: ${{ github.workspace }}/coverage/lcov
+    timeout-minutes: 15
+    concurrency:
+      group: check
+      cancel-in-progress: true
+    continue-on-error: true
+    outputs:
+      artifact-id: ${{ steps.artifacts.outputs.artifact-id }}
+      artifact-url: ${{ steps.artifacts.outputs.artifact-url }}
+      artifact-digest: ${{ steps.artifacts.outputs.artifact-digest }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - id: setup-deno
-        name: Setup Deno
         uses: denoland/setup-deno@main
         with:
-          deno-version: ${{ github.event.inputs.deno-version }}
+          deno-version: ${{ matrix.deno }}
 
       - id: cache
-        name: restore cache
         uses: actions/cache/restore@v4
         with:
           path: |
             ~/.deno
             ~/.cache
             ./**/*
-          key: ${{ runner.os }}-deno-${{ github.event.inputs.deno-version }}-${{ hashFiles('**/*') }}
+          key: ${{ runner.os }}-deno${{ matrix.deno }}-${{ hashFiles('**/*') }}
           restore-keys: |
-            ${{ runner.os }}-deno-${{ github.event.inputs.deno-version }}-
+            ${{ runner.os }}-deno-${{ matrix.deno }}-
             ${{ runner.os }}-deno-
             ${{ runner.os }}-
 
       - id: lint
-        name: Run deno lint
         if: ${{ github.event.inputs.lint != 'false' }}
         run: |
           if [[ "${{ github.event.inputs.lint }}" == "true" ]]; then
@@ -171,7 +180,6 @@ jobs:
           fi
 
       - id: fmt
-        name: Run deno fmt
         if: ${{ github.event.inputs.fmt != 'false' }}
         run: |
           if [[ "${{ github.event.inputs.fmt }}" == "true" ]] || [[ "${{ github.event.inputs.fmt }}" == "deno fmt" ]]; then
@@ -181,7 +189,6 @@ jobs:
           fi
 
       - id: test
-        name: Run deno test
         if: ${{ github.event.inputs.test != 'false' }}
         run: |
           if [[ "${{ github.event.inputs.test }}" == "deno test --doc" ]]; then
@@ -193,7 +200,6 @@ jobs:
           fi
 
       - id: coverage
-        name: Run deno coverage
         if: |
           github.event.inputs.coverage != 'false' &&
           github.event.inputs.test != 'false' &&
@@ -224,7 +230,6 @@ jobs:
           fi
 
       - id: docs
-        name: Generate documentation
         if: ${{ github.event.inputs.docs != 'false' }}
         run: |
           if [[ "${{ github.event.inputs.docs }}" == "true" ]] || [[ "${{ github.event.inputs.docs }}" == "${ALL_OF_THE_ABOVE}" ]]; then
@@ -267,7 +272,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: check
     if: |
-      github.event_name == 'workflow_dispatch' && github.event.inputs.publish
+      github.event_name == 'workflow_dispatch' &&
+      github.event.inputs.publish
     timeout-minutes: 15
     concurrency:
       group: bump
@@ -313,7 +319,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@main
         with:
-          deno-version: ${{ github.event.inputs.deno-version }}
+          deno-version: canary
       - id: publish
         run: deno task publish
         env:
