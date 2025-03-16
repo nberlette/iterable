@@ -1,0 +1,11 @@
+{
+  "name": "@iter/weak-set",
+  "version": "0.1.0",
+  "license": "MIT",
+  "author": {
+    "name": "Nicholas Berlette",
+    "email": "nick@berlette.com",
+    "url": "https://github.com/nberlette"
+  },
+  "exports": "./mod.ts"
+}
