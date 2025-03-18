@@ -1,55 +1,3 @@
-/**
- * This package provides an iterable alternative to the native `WeakSet` class.
- * It's API mirrors the native `Set` class, including the latest additions from
- * the TC39 Set Methods proposal (ES2024+).
- *
- * ### Install
- *
- * ```sh
- * deno add jsr:@iter/weak-set
- * ```
- *
- * ```sh
- * npx -y jsr add @iter/weak-set
- * # or bunx jsr add @iter/weak-set, etc.
- * ```
- *
- * ### Usage
- *
- * ```ts
- * import { IterableWeakSet } from "@iter/weak-set";
- *
- * const set = new IterableWeakSet([{ key: 1 }, { key: 2 }]);
- *
- * set.forEach(console.log);
- * // => { key: 1 }
- * // => { key: 2 }
- * ```
- *
- * ### How's it work?
- *
- * By leveraging the `WeakRef` and `FinalizationRegistry` APIs, this class is
- * able to behave as an iterable collection of weakly-held references, without
- * preventing garbage collection of the values it contains.
- *
- * @example
- * ```ts
- * import { IterableWeakSet } from "@iter/weak-set";
- *
- * const set = new IterableWeakSet([{ key: 1 }, { key: 2 }]);
- *
- * // This is a strong reference that will prevent garbage collection:
- * const values = [...set];
- * //    ^? const values: { key: number }[]
- *
- * // dereference the values and free memory
- * values.length = 0;
- * ```
- *
- * @see https://jsr.io/@iter/weak-set/doc for the API documentation.
- * @see https://github.com/tc39/proposal-weakrefs#iterable-weakmaps
- * @module weak-set
- */
 
 /**
  * An iterable alternative to the native `WeakSet` class, with an API that
@@ -216,20 +164,25 @@ export class IterableWeakSet<T extends WeakKey>
    * ```
    */
   has(value: T): boolean {
-    const { ref } = this.#map.get(value) ?? {};
-    return this.#set.has(ref!);
+    return this.#map.get(value)?.ref?.deref?.() === value;
   }
 
   /**
-   * Returns a new {@link IterableWeakSet} instance that contains the values
-   * of the current set, followed by the values of the provided set. This
-   * method does not modify the original set.
+   * Returns a new {@linkcode IterableWeakSet} instance that contains the
+   * values of the current set, followed by the values of the provided set.
+   * This method does not modify the original set.
    *
-   * This method is similar to the `Set.prototype.union()` method, which was
-   * introduced in the TC39 Proposal for extended Set methods. It also follows
-   * the same semantics as the `Set.prototype.union()` method, meaning it does
-   * not require the argument be a `Set` instance, but rather any "set-like"
-   * object (defined as objects with the members `has`, `keys`, and `size`).
+   * This method follows the same semantics as the [`Set.prototype.union`]
+   * method introduced by the [TC39 Set Methods Proposal]. The `other` argument
+   * can be any "set-like" object that implements a `size` property and `has`
+   * and `keys` methods.
+   *
+   * For example, passing a `Map` instance to this method (which also satisfies
+   * the "set-like" interface) will give the same result as passing a `Set`
+   * instance containing its keys.
+   *
+   * [`Set.prototype.union`]: https://github.com/tc39/proposal-set-methods#union
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to merge with the current set.
    * @returns A new `IterableWeakSet` instance containing the merged values.
@@ -263,28 +216,27 @@ export class IterableWeakSet<T extends WeakKey>
    */
   union<U extends WeakKey>(other: ReadonlySetLike<U>): IterableWeakSet<T | U> {
     const union = new IterableWeakSet<T | U>();
-    for (let value of this.keys()) {
-      union.add(value);
-      value = null!;
-    }
-    for (let value of iterable(other.keys())) {
-      union.add(value as T | U);
-      value = null!;
-    }
+    for (const value of this.keys()) union.add(value);
+    for (const value of iterable(other.keys())) union.add(value);
     return union;
   }
 
   /**
-   * Returns a new {@link IterableWeakSet} instance that contains the values
-   * of the current set that are also present in the other set. This method
-   * does not modify the original set.
+   * Returns a new {@linkcode IterableWeakSet} instance containing the values
+   * of this set that are also present in `other`. This method does not modify
+   * either of the original sets.
    *
-   * @remarks
-   * This method is similar to the `Set.prototype.intersection` method that
-   * was introduced by the TC39 Set Methods Proposal. It uses the same
-   * semantics as the `Set.prototype.intersection` method, meaning it does not
-   * require that argument be a `Set` instance, but rather any "set-like"
-   * object (defined as objects with the members `has`, `keys`, and `size`).
+   * This method follows the same semantics as the
+   * [`Set.prototype.intersection`] method introduced by the [TC39 Set Methods
+   * Proposal]. The `other` argument can be any "set-like" object that
+   * implements a `size` property and `has` and `keys` methods.
+   *
+   * For example, passing a `Map` instance to this method (which also satisfies
+   * the "set-like" interface) will give the same result as passing a `Set`
+   * instance containing its keys.
+   *
+   * [`Set.prototype.intersection`]: https://github.com/tc39/proposal-set-methods#intersection
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to compare with the current set.
    * @returns A new `IterableWeakSet` instance containing the intersection
@@ -305,9 +257,8 @@ export class IterableWeakSet<T extends WeakKey>
     other: ReadonlySetLike<U>,
   ): IterableWeakSet<T & U> {
     const intersection = new IterableWeakSet<T & U>();
-    for (let value of iterable(this.keys())) {
-      if (other.has(value as unknown as U)) intersection.add(value as T & U);
-      value = null!;
+    for (const value of this.keys()) {
+      if (other.has(value as T & U)) intersection.add(value as T & U);
     }
     return intersection;
   }
@@ -317,12 +268,20 @@ export class IterableWeakSet<T extends WeakKey>
    * values of the current set, excluding any values that are also present in
    * the provided set. This method does not modify the original set.
    *
-   * This method is similar to the `Set.prototype.difference()` method, which
-   * was introduced in the TC39 Proposal for extended Set methods.
+   * This method follows the same semantics as the [`Set.prototype.difference`]
+   * method introduced by the [TC39 Set Methods Proposal]. The `other` argument
+   * can be any "set-like" object that implements a `size` property and `has`
+   * and `keys` methods.
+   *
+   * For example, passing a `Map` instance to this method (which also satisfies
+   * the "set-like" interface) will give the same result as passing a `Set`
+   * instance containing its keys.
+   *
+   * [`Set.prototype.difference`]: https://github.com/tc39/proposal-set-methods#difference
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to compare with the current set.
-   * @returns A new `IterableWeakSet` instance containing the difference
-   * values.
+   * @returns A new `IterableWeakSet` containing the difference values.
    * @example
    * ```ts
    * import { IterableWeakSet } from "@iter/weak-set";
@@ -331,8 +290,7 @@ export class IterableWeakSet<T extends WeakKey>
    * const set1 = new IterableWeakSet([a, b]);
    * const set2 = new IterableWeakSet([b]);
    *
-   * const difference = set1.difference(set2);
-   * console.log(difference); // => IterableWeakSet (1) { { k: 1 } }
+   * console.log(set1.difference(set2)); // => IterableWeakSet (1) { { k: 1 } }
    * ```
    */
   difference<U extends WeakKey>(
@@ -340,20 +298,28 @@ export class IterableWeakSet<T extends WeakKey>
   ): IterableWeakSet<T> {
     const difference = new IterableWeakSet<T>();
     for (let value of this.keys()) {
-      if (!other.has(value as unknown as U)) difference.add(value);
+      if (!other.has(value as T & U)) difference.add(value);
       value = null!;
     }
     return difference;
   }
 
   /**
-   * Returns a new {@link IterableWeakSet} instance that contains the values
+   * Returns a new {@linkcode IterableWeakSet} instance containing the values
    * of the current set and the provided set, excluding any values that are
    * present in both sets. This method does not modify the original set.
    *
-   * This method is similar to the `Set.prototype.symmetricDifference()`
-   * method, which was introduced in the TC39 Proposal for extended Set
-   * methods.
+   * This follows the same semantics as [`Set.prototype.symmetricDifference`]
+   * introduced by the [TC39 Set Methods Proposal]. The `other` argument can be
+   * any "set-like" object that implements a `size` property and `has` and
+   * `keys` methods.
+   *
+   * For example, passing a `Map` instance to this method (which also satisfies
+   * the "set-like" interface) will give the same result as passing a `Set`
+   * instance containing its keys.
+   *
+   * [`Set.prototype.symmetricDifference`]: https://github.com/tc39/proposal-set-methods#symmetricdifference
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to compare with the current set.
    * @returns A new `IterableWeakSet` instance containing the symmetric
@@ -376,11 +342,11 @@ export class IterableWeakSet<T extends WeakKey>
   ): IterableWeakSet<T | U> {
     const symmetricDifference = new IterableWeakSet<T | U>();
     for (let value of this.keys()) {
-      if (!other.has(value as unknown as U)) symmetricDifference.add(value);
+      if (!other.has(value as T & U)) symmetricDifference.add(value);
       value = null!;
     }
     for (let value of iterable(other.keys())) {
-      if (!this.has(value as unknown as T)) symmetricDifference.add(value);
+      if (!this.has(value as T & U)) symmetricDifference.add(value);
       value = null!;
     }
     return symmetricDifference;
@@ -390,6 +356,14 @@ export class IterableWeakSet<T extends WeakKey>
    * Checks if the current set is a subset of the provided set. A set is a
    * subset of another set if all of its elements are contained within the
    * other set.
+   *
+   * This method follows the same semantics as the [`Set.prototype.isSubsetOf`]
+   * method introduced by the [TC39 Set Methods Proposal]. The `other` argument
+   * can be any "set-like" object that implements a `size` property and `has`
+   * and `keys` methods.
+   *
+   * [`Set.prototype.isSubsetOf`]: https://github.com/tc39/proposal-set-methods#issubsetof
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to compare with the current set.
    * @returns `true` if the current set is a subset of the provided set;
@@ -409,7 +383,7 @@ export class IterableWeakSet<T extends WeakKey>
     other: ReadonlySetLike<U>,
   ): boolean {
     for (let value of this.keys()) {
-      if (!other.has(value as unknown as U)) return false;
+      if (!other.has(value as T & U)) return false;
       value = null!;
     }
     return true;
@@ -417,8 +391,15 @@ export class IterableWeakSet<T extends WeakKey>
 
   /**
    * Checks if the current set is a superset of the provided set. A set is a
-   * superset of another set if it contains all of the elements of the other
-   * set.
+   * superset of another if it contains all of the elements of the other set.
+   *
+   * This follows the same semantics as the [`Set.prototype.isSupersetOf`]
+   * method introduced by the [TC39 Set Methods Proposal]. The `other` argument
+   * can be any "set-like" object that implements a `size` property and `has`
+   * and `keys` methods.
+   *
+   * [`Set.prototype.isSupersetOf`]: https://github.com/tc39/proposal-set-methods#issupersetof
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to compare with the current set.
    * @returns `true` if the current set is a superset of the provided set;
@@ -438,15 +419,23 @@ export class IterableWeakSet<T extends WeakKey>
     other: ReadonlySetLike<U>,
   ): boolean {
     for (let value of iterable(other.keys())) {
-      if (!this.has(value as unknown as T)) return false;
+      if (!this.has(value as T & U)) return false;
       value = null!;
     }
     return true;
   }
 
   /**
-   * Checks if the current set is disjoint from the provided set. Two sets are
-   * disjoint if they have no elements in common.
+   * Checks if the current set is disjoint from the provided set, meaning they
+   * have no elements in common.
+   *
+   * This method follows the same semantics as [`Set.prototype.isDisjointFrom`]
+   * introduced by the [TC39 Set Methods Proposal]. The `other` argument can be
+   * any "set-like" object that implements a `size` property and `has` and
+   * `keys` methods.
+   *
+   * [`Set.prototype.isDisjointFrom`]: https://github.com/tc39/proposal-set-methods#isdisjointfrom
+   * [TC39 Set Methods Proposal]: https://github.com/tc39/proposal-set-methods
    *
    * @param other The set to compare with the current set.
    * @returns `true` if the current set is disjoint from the provided set;
@@ -466,7 +455,7 @@ export class IterableWeakSet<T extends WeakKey>
     other: ReadonlySetLike<U>,
   ): boolean {
     for (let value of this.keys()) {
-      if (other.has(value as unknown as U)) return false;
+      if (other.has(value as T & U)) return false;
       value = null!;
     }
     return true;
