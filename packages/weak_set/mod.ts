@@ -1,4 +1,3 @@
-
 /**
  * An iterable alternative to the native `WeakSet` class, with an API that
  * mirrors the native `Set` class, including the latest additions from the
