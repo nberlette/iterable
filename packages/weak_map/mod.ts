@@ -347,8 +347,76 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * ```
    */
   get(key: K): V | undefined {
-    const { ref, value } = this.#map.get(key) ?? {};
-    if (ref?.deref() === key) return value;
+    return this.#map.get(key)?.value;
+  }
+
+  /**
+   * Returns a specified element from the `IterableWeakMap`. If no element is
+   * associated with the specified key, a new element with the value
+   * `defaultValue` will be inserted into the map and returned.
+   * @param key The key of the element to retrieve or insert.
+   * @param defaultValue The value to insert if the key is not already
+   * associated with an element.
+   * @returns The element associated with the specified key, which will be
+   * `defaultValue` if no element previously existed.
+   * @example
+   * ```ts
+   * import { IterableWeakMap } from "@iter/weak-map";
+   * import assert from "node:assert";
+   *
+   * const obj1 = { key: 1 }, obj2 = { key: 2 };
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
+   *
+   * // getOrInsert returns the existing value for obj1
+   * assert.strictEqual(map.getOrInsert(obj1, "default"), "value1");
+   *
+   * // obj2 is not in the map yet, so it gets inserted with the default value
+   * assert.strictEqual(map.getOrInsert(obj2, "default"), "default");
+   * assert.strictEqual(map.get(obj2), "default");
+   * ```
+   * @see https://github.com/tc39/proposal-upsert#solution-getorinsert
+   */
+  getOrInsert(key: K, defaultValue: V): V {
+    if (!this.has(key)) this.set(key, defaultValue);
+    return this.get(key)!;
+  }
+
+  /**
+   * Returns a specified element from the `IterableWeakMap`. If no element is
+   * associated with the specified key, the result of passing the specified key
+   * to the `callback` function will be inserted into the map and returned.
+   *
+   * @param key The key of the element to retrieve or upsert.
+   * @param callback A function that accepts the key as an argument and returns
+   * the value to insert if the key is not already associated with an element.
+   * @returns The element associated with the specific key, which will be the
+   * newly computed value if no element previously existed.
+   * @example
+   * ```ts
+   * import { IterableWeakMap } from "@iter/weak-map";
+   * import assert from "node:assert";
+   *
+   * const obj1 = { key: 1 }, obj2 = { key: 2 };
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
+   *
+   * // getOrInsertComputed returns the existing value for obj1
+   * assert.strictEqual(map.getOrInsertComputed(obj1, (k) => {
+   *   throw new Error("This should not be called for obj1");
+   * }), "value1");
+   *
+   * // obj2 is not in the map yet, so the callback is called for it
+   * assert.strictEqual(map.getOrInsertComputed(obj2, (k) => {
+   *   assert.strictEqual(k, obj2);
+   *   return "computed";
+   * }), "computed");
+   *
+   * assert.strictEqual(map.get(obj2), "computed");
+   * ```
+   * @see https://github.com/tc39/proposal-upsert#computing-a-default-value
+   */
+  getOrInsertComputed(key: K, callback: (key: K) => V): V {
+    if (!this.has(key)) this.set(key, callback(key));
+    return this.get(key)!;
   }
 
   /**
