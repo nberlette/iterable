@@ -25,14 +25,14 @@
  * import { IterableWeakMap } from "@iter/weak-map";
  *
  * const map = new IterableWeakMap([
- *   [{ key: 1 }, 'value1'],
- *   [{ key: 2 }, 'value2']
+ *   [{ key: 1 }, "value1"],
+ *   [{ key: 2 }, "value2"]
  * ]);
  *
  * // keeping references to keys prevents garbage collection!
  * const keys = [...map.keys()]; // => [{ key: 1 }, { key: 2 }]
  *
- * const value1 = map.get(keys[0]); // => 'value1'
+ * const value1 = map.get(keys[0]); // => "value1"
  *
  * // removing the key will allow it to be reclaimed
  * map.delete(keys[0]);
@@ -64,7 +64,7 @@ type WeakPayload<K extends WeakKey = WeakKey, V = any> = {
 /**
  * The internal value passed to the `FinalizationRegistry` when registering an
  * `IterableWeakMap` key, which provides an automatic cleanup mechanism (called
- * a 'finalizer') that runs when a value becomes unreachable.
+ * a "finalizer") that runs when a value becomes unreachable.
  * @internal
  */
 type HeldValue<K extends WeakKey = WeakKey, V = any> = {
@@ -95,14 +95,14 @@ const TypeError = globalThis.TypeError;
  *
  * // If we used a regular WeakMap here, the key would be inaccessible and
  * // therefore immediately available for garbage collection.
- * const map = new IterableWeakMap([ [{ key: 1 }, 'value1'] ]);
+ * const map = new IterableWeakMap([ [{ key: 1 }, "value1"] ]);
  *
  * // With an IterableWeakMap, however, we can easily obtain a reference to
  * // this [otherwise-unreachable] key, preventing its garbage collection.
  * let key = [...map.keys()][0];
  *
  * try {
- *   console.log(map.get(key)); // => 'value1'
+ *   console.log(map.get(key)); // => "value1"
  * } finally {
  *   // dereferencing the key allows it to be garbage collected
  *   key = null!;
@@ -220,15 +220,15 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap([
-   *   [{ key: 1 }, 'value1'],
-   *   [{ key: 2 }, 'value2']
+   *   [{ key: 1 }, "value1"],
+   *   [{ key: 2 }, "value2"]
    * ]);
    *
    * const keys = [...map.keys()];
    * // => [{ key: 1 }, { key: 2 }]
    *
    * const values = [...map.values()];
-   * // => ['value1', 'value2']
+   * // => ["value1", "value2"]
    * ```
    */
   constructor(iterable?: Iterable<readonly [K, V]> | null);
@@ -242,15 +242,15 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap([
-   *   [{ key: 1 }, 'value1'],
-   *   [{ key: 2 }, 'value2']
+   *   [{ key: 1 }, "value1"],
+   *   [{ key: 2 }, "value2"]
    * ]);
    *
    * const keys = [...map.keys()];
    * // => [{ key: 1 }, { key: 2 }]
    *
    * const values = [...map.values()];
-   * // => ['value1', 'value2']
+   * // => ["value1", "value2"]
    * ```
    */
   constructor(entries: readonly (readonly [K, V])[] | null);
@@ -275,8 +275,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap([
-   *   [{ key: 1 }, 'value1'],
-   *   [{ key: 2 }, 'value2'],
+   *   [{ key: 1 }, "value1"],
+   *   [{ key: 2 }, "value2"],
    * ]);
    *
    * map.size; // => 2
@@ -307,7 +307,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * const obj1 = { key: 1 };
    * const obj2 = { key: 2 };
    *
-   * const map = new IterableWeakMap([[obj1, 'value1']]);
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
    *
    * map.delete(obj1); // => true
    * map.delete(obj2); // => false
@@ -338,9 +338,9 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const obj1 = { key: 1 };
-   * const map = new IterableWeakMap([[obj1, 'value1']]);
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
    * const value = map.get(obj1);
-   * console.log(value); // Output: 'value1'
+   * console.log(value); // Output: "value1"
    *
    * // ... later on, obj1 is garbage collected ...
    * const value2 = map.get(obj1); // Output: undefined
@@ -364,13 +364,13 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * const map = new IterableWeakMap();
    * map.has(obj1); // => false
    *
-   * map.set(obj1, 'value1');
+   * map.set(obj1, "value1");
    * map.has(obj1); // => true
    * ```
    */
   has(key: K): boolean {
-    const { ref } = this.#map.get(key) ?? {};
-    return ref?.deref() === key;
+    const entry = this.#map.get(key);
+    return entry?.ref?.deref() === key;
   }
 
   /**
@@ -413,8 +413,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * const obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * map.forEach((value, key) => {
@@ -428,11 +428,13 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
   ): void {
     if (typeof callback !== "function") {
       throw new TypeError(
-        `${this.constructor.name}.forEach() expected a callback function, but received ${typeof callback}: ${callback}`,
+        `The .forEach method expects 'callback' to be a callable function, but received ${typeof callback}: ${callback}`,
       );
     }
 
-    for (const [key, value] of this) callback.call(thisArg!, value, key, this);
+    for (const [key, value] of this.entries()) {
+      callback.call(thisArg!, value, key, this);
+    }
   }
 
   /**
@@ -448,8 +450,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * let obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const key of map.keys()) {
@@ -485,8 +487,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * const obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const value of map.values()) {
@@ -511,8 +513,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * const obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const [key, value] of map.entries()) {
@@ -536,8 +538,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * let obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const [key, value] of map) {
