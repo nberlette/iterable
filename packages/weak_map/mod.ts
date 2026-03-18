@@ -384,7 +384,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap();
-   * map.set({ key: 1 }, 'value1');
+   * map.set({ key: 1 }, "value1");
    * ```
    */
   set(key: K, value: V): this {
