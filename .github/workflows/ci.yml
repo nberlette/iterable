@@ -216,7 +216,7 @@ jobs:
 
       - id: build
         name: Run build task (if present)
-        if: github.event.inputs.build
+        if: github.event.inputs.build == 'true'
         run: |
           if [ -f "deno.json" ] && jq -e '.tasks.build' deno.json > /dev/null 2>&1; then
             deno task build
