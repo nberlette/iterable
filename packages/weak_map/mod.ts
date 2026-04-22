@@ -174,12 +174,12 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
   ): IterableWeakMap<K, T[]> {
     if (typeof keySelector !== "function") {
       throw new TypeError(
-        "[IterableWeakMap.groupBy] Expected a function: 'keySelector'",
+        "Failed to execute 'groupBy' on 'IterableWeakMap': expected parameter 'keySelector' to be a function, but received ${typeof keySelector}: ${keySelector}",
       );
     }
     if (items == null || typeof items[Symbol.iterator] !== "function") {
       throw new TypeError(
-        "[IterableWeakMap.groupBy] Expected an iterable: 'items'",
+        "Failed to execute 'groupBy' on 'IterableWeakMap': expected parameter 'items' to be an iterable, but received ${typeof items}: ${items}",
       );
     }
     const map = new IterableWeakMap<K, T[]>();
@@ -415,6 +415,11 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * @see https://github.com/tc39/proposal-upsert#computing-a-default-value
    */
   getOrInsertComputed(key: K, callback: (key: K) => V): V {
+    if (typeof callback !== "function") {
+      throw new TypeError(
+        `Failed to execute 'getOrInsertComputed' on 'IterableWeakMap': expected parameter 'callback' to be a function, but received ${typeof callback}: ${callback}`,
+      );
+    }
     if (!this.has(key)) this.set(key, callback(key));
     return this.get(key)!;
   }
@@ -496,7 +501,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
   ): void {
     if (typeof callback !== "function") {
       throw new TypeError(
-        `The .forEach method expects 'callback' to be a callable function, but received ${typeof callback}: ${callback}`,
+        `Failed to execute 'forEach' on 'IterableWeakMap': expected parameter 'callback' to be a function, but received ${typeof callback}: ${callback}`,
       );
     }
 
@@ -668,6 +673,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
           return `${name}(${this.size}) { ${value} }`;
         },
         configurable: true,
+        writable: true,
       },
     });
   }
