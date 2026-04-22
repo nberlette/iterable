@@ -8,8 +8,6 @@ on:
   pull_request:
     branches:
       - main
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -104,15 +102,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Deno
-        uses: denoland/setup-deno@main
+        uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ github.event.inputs.deno-version }}
 
       - id: cache
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             ~/.deno
@@ -145,15 +143,15 @@ jobs:
       artifact-url: ${{ steps.artifacts.outputs.artifact-url }}
       artifact-digest: ${{ steps.artifacts.outputs.artifact-digest }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - id: setup-deno
-        uses: denoland/setup-deno@main
+        uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ matrix.deno }}
 
       - id: cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.deno
@@ -166,7 +164,7 @@ jobs:
             ${{ runner.os }}-
 
       - id: lint
-        if: ${{ github.event.inputs.lint != 'false' }}
+        if: github.event.inputs.lint != 'false'
         run: |
           if [[ "${{ github.event.inputs.lint || 'true' }}" == "true" ]]; then
             deno lint
@@ -180,7 +178,7 @@ jobs:
           fi
 
       - id: fmt
-        if: ${{ github.event.inputs.fmt != 'false' }}
+        if: github.event.inputs.fmt != 'false'
         run: |
           if [[ "${{ github.event.inputs.fmt }}" == "true" ]] || [[ "${{ github.event.inputs.fmt }}" == "deno fmt" ]]; then
             deno fmt
@@ -189,7 +187,7 @@ jobs:
           fi
 
       - id: test
-        if: ${{ github.event.inputs.test != 'false' }}
+        if: github.event.inputs.test != 'false'
         run: |
           if [[ "${{ github.event.inputs.test || 'deno test --doc' }}" == "deno test --doc" ]]; then
             deno task test:doc
@@ -218,7 +216,7 @@ jobs:
 
       - id: build
         name: Run build task (if present)
-        if: ${{ github.event.inputs.build }}
+        if: github.event.inputs.build
         run: |
           if [ -f "deno.json" ] && jq -e '.tasks.build' deno.json > /dev/null 2>&1; then
             deno task build
@@ -230,7 +228,7 @@ jobs:
           fi
 
       - id: docs
-        if: ${{ github.event.inputs.docs != 'false' }}
+        if: github.event.inputs.docs != 'false'
         run: |
           mkdir -p "${DENO_DOC_DIR}"
           if [[ "${{ github.event.inputs.docs }}" == "" ]] || [[ "${{ github.event.inputs.docs }}" == "deno doc" ]]; then
@@ -255,7 +253,7 @@ jobs:
           github.event.inputs.test != 'false' ||
           github.event.inputs.lint != 'false' ||
           github.event.inputs.fmt != 'false'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: iterable-${{ github.event.inputs.version }}-${{ github.sha }}
           path: |
@@ -281,8 +279,8 @@ jobs:
       cancel-in-progress: true
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@main
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: ${{ github.event.inputs.deno-version }}
       - id: bump
@@ -317,8 +315,8 @@ jobs:
       id-token: write
       packages: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: denoland/setup-deno@main
+      - uses: actions/checkout@v6
+      - uses: denoland/setup-deno@v2
         with:
           deno-version: canary
       - id: publish
