@@ -25,14 +25,14 @@
  * import { IterableWeakMap } from "@iter/weak-map";
  *
  * const map = new IterableWeakMap([
- *   [{ key: 1 }, 'value1'],
- *   [{ key: 2 }, 'value2']
+ *   [{ key: 1 }, "value1"],
+ *   [{ key: 2 }, "value2"]
  * ]);
  *
  * // keeping references to keys prevents garbage collection!
  * const keys = [...map.keys()]; // => [{ key: 1 }, { key: 2 }]
  *
- * const value1 = map.get(keys[0]); // => 'value1'
+ * const value1 = map.get(keys[0]); // => "value1"
  *
  * // removing the key will allow it to be reclaimed
  * map.delete(keys[0]);
@@ -64,7 +64,7 @@ type WeakPayload<K extends WeakKey = WeakKey, V = any> = {
 /**
  * The internal value passed to the `FinalizationRegistry` when registering an
  * `IterableWeakMap` key, which provides an automatic cleanup mechanism (called
- * a 'finalizer') that runs when a value becomes unreachable.
+ * a "finalizer") that runs when a value becomes unreachable.
  * @internal
  */
 type HeldValue<K extends WeakKey = WeakKey, V = any> = {
@@ -95,14 +95,14 @@ const TypeError = globalThis.TypeError;
  *
  * // If we used a regular WeakMap here, the key would be inaccessible and
  * // therefore immediately available for garbage collection.
- * const map = new IterableWeakMap([ [{ key: 1 }, 'value1'] ]);
+ * const map = new IterableWeakMap([ [{ key: 1 }, "value1"] ]);
  *
  * // With an IterableWeakMap, however, we can easily obtain a reference to
  * // this [otherwise-unreachable] key, preventing its garbage collection.
  * let key = [...map.keys()][0];
  *
  * try {
- *   console.log(map.get(key)); // => 'value1'
+ *   console.log(map.get(key)); // => "value1"
  * } finally {
  *   // dereferencing the key allows it to be garbage collected
  *   key = null!;
@@ -174,12 +174,12 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
   ): IterableWeakMap<K, T[]> {
     if (typeof keySelector !== "function") {
       throw new TypeError(
-        "[IterableWeakMap.groupBy] Expected a function: 'keySelector'",
+        "Failed to execute 'groupBy' on 'IterableWeakMap': expected parameter 'keySelector' to be a function, but received ${typeof keySelector}: ${keySelector}",
       );
     }
     if (items == null || typeof items[Symbol.iterator] !== "function") {
       throw new TypeError(
-        "[IterableWeakMap.groupBy] Expected an iterable: 'items'",
+        "Failed to execute 'groupBy' on 'IterableWeakMap': expected parameter 'items' to be an iterable, but received ${typeof items}: ${items}",
       );
     }
     const map = new IterableWeakMap<K, T[]>();
@@ -220,15 +220,15 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap([
-   *   [{ key: 1 }, 'value1'],
-   *   [{ key: 2 }, 'value2']
+   *   [{ key: 1 }, "value1"],
+   *   [{ key: 2 }, "value2"]
    * ]);
    *
    * const keys = [...map.keys()];
    * // => [{ key: 1 }, { key: 2 }]
    *
    * const values = [...map.values()];
-   * // => ['value1', 'value2']
+   * // => ["value1", "value2"]
    * ```
    */
   constructor(iterable?: Iterable<readonly [K, V]> | null);
@@ -242,15 +242,15 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap([
-   *   [{ key: 1 }, 'value1'],
-   *   [{ key: 2 }, 'value2']
+   *   [{ key: 1 }, "value1"],
+   *   [{ key: 2 }, "value2"]
    * ]);
    *
    * const keys = [...map.keys()];
    * // => [{ key: 1 }, { key: 2 }]
    *
    * const values = [...map.values()];
-   * // => ['value1', 'value2']
+   * // => ["value1", "value2"]
    * ```
    */
   constructor(entries: readonly (readonly [K, V])[] | null);
@@ -275,8 +275,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap([
-   *   [{ key: 1 }, 'value1'],
-   *   [{ key: 2 }, 'value2'],
+   *   [{ key: 1 }, "value1"],
+   *   [{ key: 2 }, "value2"],
    * ]);
    *
    * map.size; // => 2
@@ -307,7 +307,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * const obj1 = { key: 1 };
    * const obj2 = { key: 2 };
    *
-   * const map = new IterableWeakMap([[obj1, 'value1']]);
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
    *
    * map.delete(obj1); // => true
    * map.delete(obj2); // => false
@@ -338,17 +338,90 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const obj1 = { key: 1 };
-   * const map = new IterableWeakMap([[obj1, 'value1']]);
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
    * const value = map.get(obj1);
-   * console.log(value); // Output: 'value1'
+   * console.log(value); // Output: "value1"
    *
    * // ... later on, obj1 is garbage collected ...
    * const value2 = map.get(obj1); // Output: undefined
    * ```
    */
   get(key: K): V | undefined {
-    const { ref, value } = this.#map.get(key) ?? {};
-    if (ref?.deref() === key) return value;
+    return this.#map.get(key)?.value;
+  }
+
+  /**
+   * Returns a specified element from the `IterableWeakMap`. If no element is
+   * associated with the specified key, a new element with the value
+   * `defaultValue` will be inserted into the map and returned.
+   * @param key The key of the element to retrieve or insert.
+   * @param defaultValue The value to insert if the key is not already
+   * associated with an element.
+   * @returns The element associated with the specified key, which will be
+   * `defaultValue` if no element previously existed.
+   * @example
+   * ```ts
+   * import { IterableWeakMap } from "@iter/weak-map";
+   * import assert from "node:assert";
+   *
+   * const obj1 = { key: 1 }, obj2 = { key: 2 };
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
+   *
+   * // getOrInsert returns the existing value for obj1
+   * assert.strictEqual(map.getOrInsert(obj1, "default"), "value1");
+   *
+   * // obj2 is not in the map yet, so it gets inserted with the default value
+   * assert.strictEqual(map.getOrInsert(obj2, "default"), "default");
+   * assert.strictEqual(map.get(obj2), "default");
+   * ```
+   * @see https://github.com/tc39/proposal-upsert#solution-getorinsert
+   */
+  getOrInsert(key: K, defaultValue: V): V {
+    if (!this.has(key)) this.set(key, defaultValue);
+    return this.get(key)!;
+  }
+
+  /**
+   * Returns a specified element from the `IterableWeakMap`. If no element is
+   * associated with the specified key, the result of passing the specified key
+   * to the `callback` function will be inserted into the map and returned.
+   *
+   * @param key The key of the element to retrieve or upsert.
+   * @param callback A function that accepts the key as an argument and returns
+   * the value to insert if the key is not already associated with an element.
+   * @returns The element associated with the specific key, which will be the
+   * newly computed value if no element previously existed.
+   * @example
+   * ```ts
+   * import { IterableWeakMap } from "@iter/weak-map";
+   * import assert from "node:assert";
+   *
+   * const obj1 = { key: 1 }, obj2 = { key: 2 };
+   * const map = new IterableWeakMap([[obj1, "value1"]]);
+   *
+   * // getOrInsertComputed returns the existing value for obj1
+   * assert.strictEqual(map.getOrInsertComputed(obj1, (k) => {
+   *   throw new Error("This should not be called for obj1");
+   * }), "value1");
+   *
+   * // obj2 is not in the map yet, so the callback is called for it
+   * assert.strictEqual(map.getOrInsertComputed(obj2, (k) => {
+   *   assert.strictEqual(k, obj2);
+   *   return "computed";
+   * }), "computed");
+   *
+   * assert.strictEqual(map.get(obj2), "computed");
+   * ```
+   * @see https://github.com/tc39/proposal-upsert#computing-a-default-value
+   */
+  getOrInsertComputed(key: K, callback: (key: K) => V): V {
+    if (typeof callback !== "function") {
+      throw new TypeError(
+        `Failed to execute 'getOrInsertComputed' on 'IterableWeakMap': expected parameter 'callback' to be a function, but received ${typeof callback}: ${callback}`,
+      );
+    }
+    if (!this.has(key)) this.set(key, callback(key));
+    return this.get(key)!;
   }
 
   /**
@@ -364,13 +437,13 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * const map = new IterableWeakMap();
    * map.has(obj1); // => false
    *
-   * map.set(obj1, 'value1');
+   * map.set(obj1, "value1");
    * map.has(obj1); // => true
    * ```
    */
   has(key: K): boolean {
-    const { ref } = this.#map.get(key) ?? {};
-    return ref?.deref() === key;
+    const entry = this.#map.get(key);
+    return entry?.ref?.deref() === key;
   }
 
   /**
@@ -384,7 +457,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    * import { IterableWeakMap } from "@iter/weak-map";
    *
    * const map = new IterableWeakMap();
-   * map.set({ key: 1 }, 'value1');
+   * map.set({ key: 1 }, "value1");
    * ```
    */
   set(key: K, value: V): this {
@@ -413,8 +486,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * const obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * map.forEach((value, key) => {
@@ -428,11 +501,13 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
   ): void {
     if (typeof callback !== "function") {
       throw new TypeError(
-        `${this.constructor.name}.forEach() expected a callback function, but received ${typeof callback}: ${callback}`,
+        `Failed to execute 'forEach' on 'IterableWeakMap': expected parameter 'callback' to be a function, but received ${typeof callback}: ${callback}`,
       );
     }
 
-    for (const [key, value] of this) callback.call(thisArg!, value, key, this);
+    for (const [key, value] of this.entries()) {
+      callback.call(thisArg!, value, key, this);
+    }
   }
 
   /**
@@ -448,8 +523,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * let obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const key of map.keys()) {
@@ -485,8 +560,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * const obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const value of map.values()) {
@@ -511,8 +586,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * const obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const [key, value] of map.entries()) {
@@ -536,8 +611,8 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
    *
    * let obj1 = { key: 1 }, obj2 = { key: 2 };
    * const map = new IterableWeakMap([
-   *   [obj1, 'value1'],
-   *   [obj2, 'value2'],
+   *   [obj1, "value1"],
+   *   [obj2, "value2"],
    * ]);
    *
    * for (const [key, value] of map) {
@@ -598,6 +673,7 @@ export class IterableWeakMap<K extends WeakKey = WeakKey, V = any>
           return `${name}(${this.size}) { ${value} }`;
         },
         configurable: true,
+        writable: true,
       },
     });
   }
